@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>STP — Response Dashboard</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+  :root {
+    --bg: #F4F7F5;
+    --card: #FFFFFF;
+    --ink: #142A2E;
+    --ink-soft: #56676A;
+    --teal: #1F6F6B;
+    --teal-deep: #14504D;
+    --teal-tint: #E9F3F1;
+    --coral: #E2725B;
+    --line: #DDE6E3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 30px 18px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+
+  .header { text-align: center; margin-bottom: 26px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 8px;
+  }
+  .title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; margin-bottom: 6px; }
+  .slogan { font-size: 13px; color: var(--coral); font-weight: 600; }
+
+  /* Login screen */
+  .login-box {
+    max-width: 360px;
+    margin: 60px auto;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 30px 26px;
+    text-align: center;
+  }
+  .login-box .icon { font-size: 30px; margin-bottom: 10px; }
+  .login-box h2 { font-family: 'Fraunces', serif; font-size: 19px; margin: 0 0 6px; }
+  .login-box p { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 18px; }
+  .login-box input {
+    width: 100%;
+    background: var(--teal-tint);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    margin-bottom: 10px;
+    outline: none;
+  }
+  .login-box input:focus { border-color: var(--teal); }
+  .login-btn {
+    width: 100%;
+    background: var(--teal);
+    color: white;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 11px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .login-btn:hover { background: var(--teal-deep); }
+  .login-error { color: var(--coral); font-size: 12px; margin-top: 10px; min-height: 16px; }
+
+  .dashboard { display: none; }
+  .dashboard.active { display: block; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--teal-deep);
+  }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); animation: pulseDot 1.6s infinite; }
+  @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .toolbar-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .toolbar-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+  @media (max-width: 600px) { .stats { grid-template-columns: 1fr; } }
+  .stat-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .stat-num { font-family: 'Fraunces', serif; font-weight: 600; font-size: 28px; color: var(--teal-deep); }
+  .stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); margin-top: 4px; }
+  .stat-breakdown { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+  .stat-breakdown span.tag-name { color: var(--ink); font-weight: 600; }
+
+  .filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .filter-chip.active { border-color: var(--teal); background: var(--teal-tint); color: var(--teal-deep); font-weight: 600; }
+
+  .response-list { display: flex; flex-direction: column; gap: 12px; }
+  .response-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    animation: cardIn 0.3s ease;
+  }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .response-card.is-new { border-color: var(--coral); }
+  .new-flag {
+    display: inline-block;
+    background: var(--coral);
+    color: white;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .response-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+  .response-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; }
+  .response-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+  .response-meta { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 10px; }
+  .response-meta .contact { color: var(--teal-deep); font-weight: 600; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .tag {
+    background: var(--teal-tint);
+    color: var(--teal-deep);
+    border-radius: 5px;
+    padding: 3px 9px;
+    font-size: 11.5px;
+  }
+  .response-note {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.6;
+    background: var(--teal-tint);
+    border-left: 3px solid var(--coral);
+    padding: 10px 12px;
+    border-radius: 4px;
+    margin-top: 6px;
+  }
+
+  .empty-state { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="eyebrow">STP</div>
+    <div class="title">Response Dashboard</div>
+    <div class="slogan">The solution to your problems.</div>
+  </div>
+
+  <div class="login-box" id="login-box">
+    <div class="icon">&#128274;</div>
+    <h2>Owner login</h2>
+    <p>Sign in with the account you created in Firebase Authentication.</p>
+    <input type="email" id="login-email" placeholder="Email" />
+    <input type="password" id="login-password" placeholder="Password" />
+    <button class="login-btn" id="login-btn">Sign in</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+
+  <div class="dashboard" id="dashboard">
+    <div class="toolbar">
+      <div class="live-badge"><span class="live-dot"></span> live &mdash; updates automatically</div>
+      <button class="toolbar-btn" id="logout-btn">Sign out</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="filter-row" id="filter-row"></div>
+    <div class="response-list" id="response-list"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PASTE YOUR FIREBASE CONFIG HERE (same one you used in the survey)
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDCnk39F69mubeBZonIGQNIBXN4z7KK8",
+  authDomain: "stp-solutions.firebaseapp.com",
+  projectId: "stp-solutions",
+  storageBucket: "stp-solutions.firebasestorage.app",
+  messagingSenderId: "240457683799",
+  appId: "1:240457683799:web:0bf6bcd0bb32abb52e2412"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+// ============================================================
+
+(function() {
+  const loginBox = document.getElementById('login-box');
+  const dashboard = document.getElementById('dashboard');
+  const loginBtn = document.getElementById('login-btn');
+  const loginEmail = document.getElementById('login-email');
+  const loginPassword = document.getElementById('login-password');
+  const loginError = document.getElementById('login-error');
+  const logoutBtn = document.getElementById('logout-btn');
+  const statsEl = document.getElementById('stats');
+  const filterRow = document.getElementById('filter-row');
+  const listEl = document.getElementById('response-list');
+
+  let allResponses = [];
+  let activeFilter = null;
+  let seenIds = new Set();
+  let firstLoad = true;
+  let unsubscribe = null;
+
+  loginBtn.addEventListener('click', () => {
+    loginError.textContent = '';
+    auth.signInWithEmailAndPassword(loginEmail.value.trim(), loginPassword.value)
+      .catch(err => { loginError.textContent = 'Could not sign in \u2014 check email and password.'; });
+  });
+  loginPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+
+  logoutBtn.addEventListener('click', () => { auth.signOut(); });
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      loginBox.style.display = 'none';
+      dashboard.classList.add('active');
+      startListening();
+    } else {
+      loginBox.style.display = 'block';
+      dashboard.classList.remove('active');
+      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+      allResponses = [];
+      seenIds = new Set();
+      firstLoad = true;
+    }
+  });
+
+  function escapeHtml(str) {
+    return (str||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function startListening() {
+    unsubscribe = db.collection('responses').orderBy('submittedAt', 'desc')
+      .onSnapshot(snapshot => {
+        const newIds = [];
+        allResponses = snapshot.docs.map(doc => {
+          const data = doc.data();
+          if (!firstLoad && !seenIds.has(doc.id)) newIds.push(doc.id);
+          seenIds.add(doc.id);
+          return {
+            id: doc.id,
+            businessName: data.businessName || '',
+            type: data.businessType || '',
+            size: data.businessSize || '',
+            struggles: data.struggles || [],
+            other: data.struggleOther || '',
+            notes: data.notes || '',
+            contact: data.contact || '',
+            submittedAt: data.submittedAt || ''
+          };
+        });
+        render(newIds);
+        firstLoad = false;
+      }, err => {
+        listEl.innerHTML = '<div class="empty-state">Could not load responses. Check your Firestore rules and config.</div>';
+      });
+  }
+
+  function render(newIds) {
+    newIds = newIds || [];
+    if (allResponses.length === 0) {
+      statsEl.innerHTML = '';
+      filterRow.innerHTML = '';
+      listEl.innerHTML = '<div class="empty-state">No responses yet \u2014 they\'ll show up here the moment someone submits the survey.</div>';
+      return;
+    }
+
+    const total = allResponses.length;
+    const typeCounts = {};
+    const struggleCounts = {};
+    allResponses.forEach(r => {
+      if (r.type) typeCounts[r.type] = (typeCounts[r.type]||0) + 1;
+      r.struggles.forEach(s => { struggleCounts[s] = (struggleCounts[s]||0) + 1; });
+    });
+    const topStruggles = Object.entries(struggleCounts).sort((a,b) => b[1]-a[1]).slice(0,3);
+    const typeBreakdown = Object.entries(typeCounts).sort((a,b) => b[1]-a[1]);
+
+    statsEl.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-num">${total}</div>
+        <div class="stat-label">Total responses</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">${typeBreakdown.length ? typeBreakdown[0][1] : 0}</div>
+        <div class="stat-label">Top business type</div>
+        <div class="stat-breakdown">${typeBreakdown.map(([t,c]) => `<span class="tag-name">${escapeHtml(t)}</span>: ${c}`).join('<br/>')}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">${topStruggles.length}</div>
+        <div class="stat-label">Top struggles</div>
+        <div class="stat-breakdown">${topStruggles.map(([s,c]) => `<span class="tag-name">${escapeHtml(s)}</span>: ${c}`).join('<br/>')}</div>
+      </div>
+    `;
+
+    const allStruggleNames = Object.keys(struggleCounts).sort((a,b) => struggleCounts[b]-struggleCounts[a]);
+    filterRow.innerHTML = '<div class="filter-chip' + (activeFilter===null?' active':'') + '" data-filter="">All (' + total + ')</div>' +
+      allStruggleNames.map(s => `<div class="filter-chip${activeFilter===s?' active':''}" data-filter="${escapeHtml(s)}">${escapeHtml(s)} (${struggleCounts[s]})</div>`).join('');
+    filterRow.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => { activeFilter = chip.dataset.filter || null; render([]); });
+    });
+
+    let filtered = allResponses.slice();
+    if (activeFilter) filtered = filtered.filter(r => r.struggles.includes(activeFilter));
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">No responses match this filter.</div>';
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(r => `
+      <div class="response-card${newIds.includes(r.id) ? ' is-new' : ''}">
+        <div class="response-top">
+          <div class="response-name">${escapeHtml(r.businessName || 'Unnamed business')}${newIds.includes(r.id) ? '<span class="new-flag">NEW</span>' : ''}</div>
+          <div class="response-date">${escapeHtml((r.submittedAt||'').slice(0,10))}</div>
+        </div>
+        <div class="response-meta">${escapeHtml(r.type)}${r.size ? ' &middot; ' + escapeHtml(r.size) : ''}${r.contact ? ' &middot; <span class="contact">' + escapeHtml(r.contact) + '</span>' : ''}</div>
+        <div class="tag-row">
+          ${r.struggles.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}
+          ${r.other ? `<span class="tag">${escapeHtml(r.other)}</span>` : ''}
+        </div>
+        ${r.notes ? `<div class="response-note">"${escapeHtml(r.notes)}"</div>` : ''}
+      </div>
+    `).join('');
+  }
+})();
+</script>
+</body>
+</html>
