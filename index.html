@@ -1,7 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>STP — Quick Business Check</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
 
-  #svy-root {
+  :root {
     --bg: #F4F7F5;
     --card: #FFFFFF;
     --ink: #142A2E;
@@ -11,16 +19,15 @@
     --teal-tint: #E9F3F1;
     --coral: #E2725B;
     --line: #DDE6E3;
-
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
     font-family: 'Inter', -apple-system, sans-serif;
     background: var(--bg);
     color: var(--ink);
     padding: 30px 18px 50px;
-    border-radius: 12px;
-    box-sizing: border-box;
-    min-height: 100vh;
   }
-  #svy-root * { box-sizing: border-box; }
 
   .svy-wrap { max-width: 620px; margin: 0 auto; }
 
@@ -70,12 +77,6 @@
     width: 0%;
     background: var(--teal);
     transition: width 0.3s ease;
-  }
-  .svy-pulse-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
-    color: var(--ink-soft);
-    white-space: nowrap;
   }
 
   .svy-card {
@@ -213,10 +214,9 @@
   .svy-landing-copy { font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; max-width: 400px; margin: 0 auto; }
 
   @media (max-width: 480px) {
-    #svy-root { padding: 20px 12px 36px; }
+    body { padding: 20px 12px 36px; }
     .svy-title { font-size: 24px; }
     .svy-card { padding: 22px 18px; }
-    .svy-choice-grid { grid-template-columns: 1fr; }
     .svy-landing-hook { font-size: 22px; }
   }
 
@@ -225,142 +225,121 @@
   .svy-thanks h3 { font-family: 'Fraunces', serif; font-size: 22px; margin-bottom: 8px; }
   .svy-thanks p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; max-width: 380px; margin: 0 auto; }
 
-  .svy-admin-link {
-    display: block;
-    text-align: center;
-    margin-top: 22px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-soft);
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+  .svy-error {
+    background: #FDECE8;
+    border: 1px solid var(--coral);
+    border-left: 3px solid var(--coral);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: #8A2E1A;
+    line-height: 1.55;
+    display: none;
   }
-
-  /* Admin view */
-  .svy-admin { display: none; }
-  .svy-admin.active { display: block; }
-  .svy-admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .svy-admin-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
-  .svy-response-card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    font-size: 12.5px;
-  }
-  .svy-response-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
-  .svy-response-name { font-weight: 600; font-family: 'Inter', sans-serif; font-size: 14px; }
-  .svy-response-meta { color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
-  .svy-tag {
-    display: inline-block;
-    background: var(--teal-tint);
-    color: var(--teal-deep);
-    border-radius: 4px;
-    padding: 2px 7px;
-    margin: 2px 4px 2px 0;
-    font-size: 11px;
-  }
-  .svy-response-note { margin-top: 8px; color: var(--ink-soft); line-height: 1.5; }
+  .svy-error.show { display: block; }
 </style>
+</head>
+<body>
 
-<div id="svy-root">
-  <div class="svy-wrap" id="svy-survey-wrap">
-    <div class="svy-eyebrow">STP &mdash; Quick Business Check</div>
-    <div class="svy-title">What's slowing your business down day to day?</div>
-    <div class="svy-subtitle" style="font-weight:600; color:var(--teal-deep); margin-bottom:6px;">The solution to your problems.</div>
-    <div class="svy-subtitle">Two minutes, three quick questions. We're just listening for now &mdash; no pitch, no pricing, just trying to understand what small (and not-so-small) businesses actually struggle with.</div>
+<div class="svy-wrap" id="svy-survey-wrap">
+  <div class="svy-eyebrow">STP &mdash; Quick Business Check</div>
+  <div class="svy-title">What's slowing your business down day to day?</div>
+  <div class="svy-subtitle" style="font-weight:600; color:var(--teal-deep); margin-bottom:6px;">The solution to your problems.</div>
+  <div class="svy-subtitle">Two minutes, three quick questions. We're just listening for now &mdash; no pitch, no pricing, just trying to understand what small (and not-so-small) businesses actually struggle with.</div>
 
-    <div class="svy-pulse" id="svy-pulse"></div>
+  <div class="svy-pulse" id="svy-pulse"></div>
 
-    <div class="svy-card">
-      <div class="svy-step active" data-step="0">
-        <div class="svy-landing">
-          <div class="svy-landing-mark">STP</div>
-          <div class="svy-landing-slogan">The solution to your problems.</div>
-          <div class="svy-landing-hook">What's slowing your business down day to day?</div>
-          <div class="svy-landing-copy">A free 2-minute check for small (and not-so-small) businesses. No pitch, no pricing &mdash; we just want to understand what you're dealing with.</div>
-        </div>
-      </div>
-
-      <div class="svy-step" data-step="1">
-        <div class="svy-q-title">Tell us about your business</div>
-        <div class="svy-q-help">So we know who we're talking to.</div>
-        <div class="svy-field">
-          <label>Business name</label>
-          <input id="q-bizname" placeholder="e.g. Ayesha's Kitchen" />
-        </div>
-        <div class="svy-field">
-          <label>What kind of business is it?</label>
-          <div class="svy-choice-grid" id="q-biztype"></div>
-        </div>
-        <div class="svy-field">
-          <label>How big is your team?</label>
-          <div class="svy-choice-grid" id="q-bizsize"></div>
-        </div>
-      </div>
-
-      <div class="svy-step" data-step="2">
-        <div class="svy-q-title">Where's the friction?</div>
-        <div class="svy-q-help">Pick everything that feels true. The more you tell us, the more we can actually help with.</div>
-        <div class="svy-checklist" id="q-struggles"></div>
-        <div class="svy-field" style="margin-top:14px;">
-          <label>Other (optional)</label>
-          <input id="q-struggle-other" placeholder="Something not listed above?" />
-        </div>
-      </div>
-
-      <div class="svy-step" data-step="3">
-        <div class="svy-q-title">Anything else on your mind?</div>
-        <div class="svy-q-help">Totally optional &mdash; but the more context, the better we can tailor ideas for you.</div>
-        <div class="svy-field">
-          <textarea id="q-notes" placeholder="e.g. I lose track of orders when things get busy, or my bookkeeping is a mess by month-end..."></textarea>
-        </div>
-        <div class="svy-field">
-          <label>How can we reach you?</label>
-          <input id="q-contact" placeholder="WhatsApp number or email" />
-        </div>
-        <div class="svy-call-option">
-          <span>Rather just talk it through?</span>
-          <a href="tel:0677698001" class="svy-call-btn">&#128222; Call 067 769 8001</a>
-        </div>
-      </div>
-
-      <div class="svy-step" data-step="thanks">
-        <div class="svy-thanks">
-          <div class="mark">&#10003;</div>
-          <h3>Thanks, that's really useful.</h3>
-          <p>We're gathering what businesses like yours actually struggle with before we build or suggest anything. If there's a fit, we'll reach out with ideas &mdash; no pressure, no price talk.</p>
-          <a href="tel:0677698001" class="svy-call-btn" style="margin-top:16px;">&#128222; Or call us now: 067 769 8001</a>
-        </div>
-      </div>
-
-      <div class="svy-nav" id="svy-nav">
-        <button class="svy-btn svy-btn-ghost" id="svy-back-btn">Back</button>
-        <button class="svy-btn svy-btn-primary" id="svy-next-btn">Continue</button>
+  <div class="svy-card">
+    <div class="svy-step active" data-step="0">
+      <div class="svy-landing">
+        <div class="svy-landing-mark">STP</div>
+        <div class="svy-landing-slogan">The solution to your problems.</div>
+        <div class="svy-landing-hook">What's slowing your business down day to day?</div>
+        <div class="svy-landing-copy">A free 2-minute check for small (and not-so-small) businesses. No pitch, no pricing &mdash; we just want to understand what you're dealing with.</div>
       </div>
     </div>
 
-    <button class="svy-admin-link" id="svy-admin-toggle">business owner? view responses</button>
-  </div>
-
-  <div class="svy-wrap svy-admin" id="svy-admin-panel">
-    <div class="svy-admin-header">
-      <div class="svy-admin-title">Survey responses</div>
-      <button class="svy-btn svy-btn-ghost" id="svy-admin-back">&larr; back to survey</button>
+    <div class="svy-step" data-step="1">
+      <div class="svy-q-title">Tell us about your business</div>
+      <div class="svy-q-help">So we know who we're talking to.</div>
+      <div class="svy-field">
+        <label for="q-bizname">Business name</label>
+        <input id="q-bizname" placeholder="e.g. Ayesha's Kitchen" />
+      </div>
+      <div class="svy-field">
+        <label>What kind of business is it?</label>
+        <div class="svy-choice-grid" id="q-biztype"></div>
+      </div>
+      <div class="svy-field">
+        <label>How big is your team?</label>
+        <div class="svy-choice-grid" id="q-bizsize"></div>
+      </div>
     </div>
-    <div id="svy-admin-body"><div class="svy-q-help">Loading...</div></div>
-    <button class="svy-btn svy-btn-primary" id="svy-export-btn" style="margin-top:14px; display:none;">Export as CSV</button>
+
+    <div class="svy-step" data-step="2">
+      <div class="svy-q-title">Where's the friction?</div>
+      <div class="svy-q-help">Pick everything that feels true. The more you tell us, the more we can actually help with.</div>
+      <div class="svy-checklist" id="q-struggles"></div>
+      <div class="svy-field" style="margin-top:14px;">
+        <label for="q-struggle-other">Other (optional)</label>
+        <input id="q-struggle-other" placeholder="Something not listed above?" />
+      </div>
+    </div>
+
+    <div class="svy-step" data-step="3">
+      <div class="svy-q-title">Anything else on your mind?</div>
+      <div class="svy-q-help">Totally optional &mdash; but the more context, the better we can tailor ideas for you.</div>
+      <div class="svy-field">
+        <label for="q-notes">Notes</label>
+        <textarea id="q-notes" placeholder="e.g. I lose track of orders when things get busy, or my bookkeeping is a mess by month-end..."></textarea>
+      </div>
+      <div class="svy-field">
+        <label for="q-contact">How can we reach you?</label>
+        <input id="q-contact" placeholder="WhatsApp number or email" />
+      </div>
+      <div class="svy-call-option">
+        <span>Rather just talk it through?</span>
+        <a href="tel:0677698001" class="svy-call-btn">&#128222; Call 067 769 8001</a>
+      </div>
+      <div class="svy-error" id="svy-error"></div>
+    </div>
+
+    <div class="svy-step" data-step="thanks">
+      <div class="svy-thanks">
+        <div class="mark">&#10003;</div>
+        <h3>Thanks, that's really useful.</h3>
+        <p>We're gathering what businesses like yours actually struggle with before we build or suggest anything. If there's a fit, we'll reach out with ideas &mdash; no pressure, no price talk.</p>
+        <a href="tel:0677698001" class="svy-call-btn" style="margin-top:16px;">&#128222; Or call us now: 067 769 8001</a>
+      </div>
+    </div>
+
+    <div class="svy-nav" id="svy-nav">
+      <button class="svy-btn svy-btn-ghost" id="svy-back-btn">Back</button>
+      <button class="svy-btn svy-btn-primary" id="svy-next-btn">Continue</button>
+    </div>
   </div>
 </div>
 
 <script>
+// ============================================================
+// Firebase — same project as the dashboard
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDCnk39F69mubeBZonIGQNIBXN4z7KK8",
+  authDomain: "stp-solutions.firebaseapp.com",
+  projectId: "stp-solutions",
+  storageBucket: "stp-solutions.firebasestorage.app",
+  messagingSenderId: "240457683799",
+  appId: "1:240457683799:web:0bf6bcd0bb32abb52e2412"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// ============================================================
+
 (function(){
   const BIZ_TYPES = ['Service business', 'Retail business', 'Both / other'];
-  const BIZ_SIZES = ['Just me', 'Small team (2\u201310)', 'Larger (10+)'];
+  const BIZ_SIZES = ['Just me', 'Small team (2–10)', 'Larger (10+)'];
   const STRUGGLES = [
     'Tracking orders or bookings',
     'Managing stock / inventory',
@@ -373,7 +352,7 @@
     'Repetitive daily admin / data entry'
   ];
 
-  let step = 0;
+  let step = '0';
   const steps = ['0','1','2','3','thanks'];
   let answers = { biztype: '', bizsize: '', struggles: [] };
 
@@ -381,6 +360,7 @@
   const navEl = document.getElementById('svy-nav');
   const backBtn = document.getElementById('svy-back-btn');
   const nextBtn = document.getElementById('svy-next-btn');
+  const errorEl = document.getElementById('svy-error');
 
   function renderPulse() {
     pulseEl.innerHTML = '';
@@ -399,7 +379,7 @@
     });
   }
 
-  function renderChoiceGroup(containerId, options, key, multi) {
+  function renderChoiceGroup(containerId, options, key) {
     const el = document.getElementById(containerId);
     el.innerHTML = '';
     options.forEach(opt => {
@@ -409,7 +389,7 @@
       if (answers[key] === opt) div.classList.add('selected');
       div.addEventListener('click', () => {
         answers[key] = opt;
-        renderChoiceGroup(containerId, options, key, multi);
+        renderChoiceGroup(containerId, options, key);
       });
       el.appendChild(div);
     });
@@ -421,7 +401,8 @@
     STRUGGLES.forEach(s => {
       const div = document.createElement('div');
       div.className = 'svy-check-item' + (answers.struggles.includes(s) ? ' selected' : '');
-      div.innerHTML = '<div class="box">' + (answers.struggles.includes(s) ? '&#10003;' : '') + '</div><div>' + s + '</div>';
+      div.innerHTML = '<div class="box">' + (answers.struggles.includes(s) ? '&#10003;' : '') + '</div><div></div>';
+      div.lastElementChild.textContent = s;
       div.addEventListener('click', () => {
         const i = answers.struggles.indexOf(s);
         if (i >= 0) answers.struggles.splice(i,1); else answers.struggles.push(s);
@@ -441,7 +422,7 @@
       navEl.style.display = 'none';
     } else {
       navEl.style.display = 'flex';
-      if (s === '0') nextBtn.textContent = 'Start the 2-minute check \u2192';
+      if (s === '0') nextBtn.textContent = 'Start the 2-minute check →';
       else nextBtn.textContent = (s === '3') ? 'Submit' : 'Continue';
     }
   }
@@ -464,11 +445,23 @@
     } else if (step === '2') {
       showStep('3');
     } else if (step === '3') {
-      await submitSurvey();
-      showStep('thanks');
+      errorEl.classList.remove('show');
+      nextBtn.disabled = true;
+      nextBtn.textContent = 'Sending…';
+      const ok = await submitSurvey();
+      if (ok) {
+        showStep('thanks');
+      } else {
+        nextBtn.disabled = false;
+        nextBtn.textContent = 'Try again';
+        errorEl.textContent = 'That did not send. Check your connection and tap Try again — or call 067 769 8001 and we will take it over the phone.';
+        errorEl.classList.add('show');
+      }
     }
   });
 
+  // Writes to the same Firestore collection the dashboard reads: 'responses'.
+  // Field names must stay in step with stp-dashboard-live.html.
   async function submitSurvey() {
     const response = {
       businessName: document.getElementById('q-bizname').value.trim(),
@@ -481,88 +474,19 @@
       submittedAt: new Date().toISOString()
     };
     try {
-      const key = 'smw-survey:response:' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-      await window.storage.set(key, JSON.stringify(response), true);
-    } catch(e) { console.error('submit failed', e); }
-  }
-
-  // Admin view
-  const adminToggle = document.getElementById('svy-admin-toggle');
-  const adminPanel = document.getElementById('svy-admin-panel');
-  const surveyWrap = document.getElementById('svy-survey-wrap');
-  const adminBack = document.getElementById('svy-admin-back');
-  const adminBody = document.getElementById('svy-admin-body');
-  const exportBtn = document.getElementById('svy-export-btn');
-  let loadedResponses = [];
-
-  adminToggle.addEventListener('click', async () => {
-    const pass = window.prompt('Owner passphrase:');
-    if (pass !== 'smwebcraft') { return; }
-    surveyWrap.style.display = 'none';
-    adminPanel.classList.add('active');
-    await loadResponses();
-  });
-  adminBack.addEventListener('click', () => {
-    adminPanel.classList.remove('active');
-    surveyWrap.style.display = 'block';
-  });
-
-  function escapeHtml(str) { return (str||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-  async function loadResponses() {
-    adminBody.innerHTML = '<div class="svy-q-help">Loading...</div>';
-    try {
-      const list = await window.storage.list('smw-survey:response:', true);
-      const keys = (list && list.keys) ? list.keys : [];
-      const results = [];
-      for (const k of keys) {
-        try {
-          const r = await window.storage.get(k, true);
-          if (r && r.value) results.push(JSON.parse(r.value));
-        } catch(e) {}
-      }
-      results.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-      loadedResponses = results;
-      if (results.length === 0) {
-        adminBody.innerHTML = '<div class="svy-q-help">No responses yet.</div>';
-        exportBtn.style.display = 'none';
-        return;
-      }
-      adminBody.innerHTML = results.map(r => `
-        <div class="svy-response-card">
-          <div class="svy-response-top">
-            <div class="svy-response-name">${escapeHtml(r.businessName)}</div>
-            <div class="svy-response-meta">${escapeHtml((r.submittedAt||'').slice(0,10))}</div>
-          </div>
-          <div class="svy-response-meta">${escapeHtml(r.businessType)} &middot; ${escapeHtml(r.businessSize)} &middot; ${escapeHtml(r.contact)}</div>
-          <div style="margin-top:8px;">${(r.struggles||[]).map(s => '<span class="svy-tag">'+escapeHtml(s)+'</span>').join('')}${r.struggleOther ? '<span class="svy-tag">'+escapeHtml(r.struggleOther)+'</span>' : ''}</div>
-          ${r.notes ? '<div class="svy-response-note">"' + escapeHtml(r.notes) + '"</div>' : ''}
-        </div>
-      `).join('');
-      exportBtn.style.display = 'inline-block';
-    } catch(e) {
-      adminBody.innerHTML = '<div class="svy-q-help">Could not load responses.</div>';
+      await db.collection('responses').add(response);
+      return true;
+    } catch (e) {
+      console.error('Survey submit failed:', e);
+      return false;
     }
   }
 
-  exportBtn.addEventListener('click', () => {
-    const rows = [['Business Name','Type','Size','Struggles','Other','Notes','Contact','Submitted At']];
-    loadedResponses.forEach(r => {
-      rows.push([r.businessName, r.businessType, r.businessSize, (r.struggles||[]).join('; '), r.struggleOther||'', (r.notes||'').replace(/\n/g,' '), r.contact, r.submittedAt]);
-    });
-    const csv = rows.map(row => row.map(cell => '"' + String(cell||'').replace(/"/g,'""') + '"').join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'smw-survey-responses.csv';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
-
-  // init
   renderChoiceGroup('q-biztype', BIZ_TYPES, 'biztype');
   renderChoiceGroup('q-bizsize', BIZ_SIZES, 'bizsize');
   renderStruggles();
   showStep('0');
 })();
 </script>
+</body>
+</html>
